@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky Store Pro</title>
+
+<style>
+:root{
+--bg:#f5f6fa;
+--card:#ffffff;
+--text:#111;
+--nav:#111;
+}
+body.dark{
+--bg:#121212;
+--card:#1e1e1e;
+--text:#ffffff;
+--nav:#000;
+}
+body{
+margin:0;
+font-family:Segoe UI;
+background:var(--bg);
+color:var(--text);
+transition:.3s;
+}
+button{cursor:pointer}
+
+/* NAV */
+.nav{
+background:var(--nav);
+color:#fff;
+padding:15px 20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+.logo{
+font-size:20px;
+font-weight:bold;
+}
+
+/* CATEGORY */
+.categories{
+display:flex;
+justify-content:center;
+gap:10px;
+padding:10px;
+flex-wrap:wrap;
+}
+.cat-btn{
+padding:8px 15px;
+border-radius:20px;
+border:none;
+background:#ddd;
+}
+.cat-btn.active{
+background:#ff9800;
+color:#fff;
+}
+
+/* SEARCH */
+.search-box{text-align:center;padding:10px}
+.search-box input{
+width:90%;max-width:400px;
+padding:10px 15px;
+border-radius:25px;
+border:1px solid #ccc;
+}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+gap:18px;
+padding:20px;
+}
+.card{
+background:var(--card);
+border-radius:18px;
+padding:12px;
+box-shadow:0 6px 18px rgba(0,0,0,.08);
+transition:.3s;
+}
+.card:hover{transform:translateY(-5px)}
+.card img{
+width:100%;height:150px;
+object-fit:cover;border-radius:12px;
+}
+.modern-btn{
+background:linear-gradient(45deg,#ff6a00,#ffb347);
+border:none;padding:10px;
+border-radius:30px;color:#fff;
+font-weight:bold;margin-top:8px;width:100%;
+}
+
+/* CART */
+.cart-btn{
+position:fixed;bottom:20px;right:20px;
+background:#000;color:#fff;
+padding:14px 18px;border-radius:40px;
+z-index:2000;
+}
+.overlay{
+position:fixed;top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,.4);
+display:none;z-index:3000;
+}
+.cart{
+position:fixed;bottom:-100%;left:0;
+width:100%;height:75%;
+background:var(--card);
+border-radius:25px 25px 0 0;
+padding:25px;transition:.4s;
+z-index:4000;overflow:auto;text-align:center;
+}
+.cart.active{bottom:0}
+.close-left{
+position:absolute;top:15px;left:20px;
+font-size:28px;font-weight:bold;cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="nav">
+<div class="logo">Sky Store</div>
+<button onclick="document.body.classList.toggle('dark')">🌙</button>
+</div>
+
+<div class="categories">
+<button class="cat-btn active" onclick="filterCategory('All',this)">All</button>
+<button class="cat-btn" onclick="filterCategory('Oil',this)">Oil</button>
+<button class="cat-btn" onclick="filterCategory('Shampoo',this)">Shampoo</button>
+<button class="cat-btn" onclick="filterCategory('Perfume',this)">Perfume</button>
+<button class="cat-btn" onclick="filterCategory('Soap',this)">Soap</button>
+</div>
+
+<div class="search-box">
+<input type="text" id="searchInput" placeholder="Search products...">
+</div>
+
+<div class="grid" id="products"></div>
+
+<div class="cart-btn" onclick="openCart()">🛒 (<span id="count">0</span>)</div>
+
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
+
+<div class="cart" id="cart">
+<div class="close-left" onclick="closeCart()">✖</div>
+<h3>Your Cart</h3>
+<div id="cartItems"></div>
+<h4>Total: ₹<span id="total">0</span></h4>
+<button class="modern-btn" onclick="orderWhatsApp()">Order on WhatsApp</button>
+</div>
+
+<script>
+
+let products=[
+
+/* OIL */
+{name:"Parachute Coconut Oil",price:180,category:"Oil",
+img:"https://images.unsplash.com/photo-1600180758890-6b94519a8ba3"},
+{name:"Dabur Amla Hair Oil",price:210,category:"Oil",
+img:"https://images.unsplash.com/photo-1598662779094-110c2b1a4b6f"},
+
+/* SHAMPOO */
+{name:"Head & Shoulders Smooth & Silky",price:320,category:"Shampoo",
+img:"https://images.unsplash.com/photo-1626806819282-2c1dc01a6d3c"},
+{name:"Pantene Pro-V",price:299,category:"Shampoo",
+img:"https://images.unsplash.com/photo-1596464716127-f2a82984de30"},
+
+/* PERFUME */
+{name:"AXE Dark Temptation",price:250,category:"Perfume",
+img:"https://images.unsplash.com/photo-1615634260167-c8cdede054de"},
+{name:"Fogg Body Spray",price:230,category:"Perfume",
+img:"https://images.unsplash.com/photo-1592945403244-b3fbafd7f539"},
+
+/* SOAP */
+{name:"Lux International Soap",price:40,category:"Soap",
+img:"https://images.unsplash.com/photo-1584305574647-0cc949a2bb9f"},
+{name:"Dove Beauty Bar",price:55,category:"Soap",
+img:"https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec"}
+
+];
+
+let cart=[];
+let whatsapp="919996337667";
+
+function render(list){
+let grid=document.getElementById("products");
+grid.innerHTML="";
+list.forEach((p,i)=>{
+grid.innerHTML+=`
+<div class="card">
+<img src="${p.img}">
+<h4>${p.name}</h4>
+<p>₹${p.price}</p>
+<button class="modern-btn" onclick="addToCart(${i})">Add to Cart</button>
+</div>`;
+});
+}
+render(products);
+
+function filterCategory(cat,btn){
+document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+if(cat==="All"){render(products);}
+else{render(products.filter(p=>p.category===cat));}
+}
+
+document.getElementById("searchInput").addEventListener("input",function(){
+let val=this.value.toLowerCase();
+render(products.filter(p=>p.name.toLowerCase().includes(val)));
+});
+
+function addToCart(i){
+cart.push(products[i]);
+updateCart();
+}
+
+function updateCart(){
+let html="";
+let total=0;
+cart.forEach(p=>{
+html+=p.name+"<br>";
+total+=p.price;
+});
+document.getElementById("cartItems").innerHTML=html;
+document.getElementById("total").innerText=total;
+document.getElementById("count").innerText=cart.length;
+}
+
+function openCart(){
+document.getElementById("cart").classList.add("active");
+document.getElementById("overlay").style.display="block";
+}
+
+function closeCart(){
+document.getElementById("cart").classList.remove("active");
+document.getElementById("overlay").style.display="none";
+}
+
+function orderWhatsApp(){
+let msg="Order:%0A";
+cart.forEach(p=>msg+=p.name+"%0A");
+window.open("https://wa.me/"+whatsapp+"?text="+msg);
+}
+
+</script>
+
+</body>
+</html>
