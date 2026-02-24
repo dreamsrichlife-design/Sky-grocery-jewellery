@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky Store</title>
+
+<style>
+body{
+font-family:Arial;
+margin:0;
+background:#f4f6f9;
+transition:0.3s;
+}
+
+.dark{
+background:#121212;
+color:white;
+}
+
+.dark .product,
+.dark .cart,
+.dark .modal-content{
+background:#1e1e1e;
+color:white;
+}
+
+/* NAVBAR */
+.navbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:#111;
+color:white;
+padding:15px 20px;
+position:sticky;
+top:0;
+z-index:1000;
+}
+
+.logo{
+font-size:20px;
+font-weight:bold;
+}
+
+.toggle-btn{
+background:#ff9800;
+border:none;
+padding:6px 12px;
+border-radius:20px;
+cursor:pointer;
+}
+
+/* SEARCH */
+.search-container{
+display:flex;
+justify-content:center;
+margin:20px;
+}
+
+.search-container input{
+width:90%;
+max-width:500px;
+padding:14px;
+border-radius:40px;
+border:none;
+outline:none;
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* PRODUCTS */
+section{
+padding:25px;
+}
+
+.product-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+gap:20px;
+}
+
+.product{
+background:white;
+padding:15px;
+border-radius:25px;
+text-align:center;
+box-shadow:0 6px 15px rgba(0,0,0,0.08);
+transition:0.3s;
+cursor:pointer;
+}
+
+.product:hover{
+transform:translateY(-8px);
+}
+
+.product img{
+width:100%;
+height:160px;
+object-fit:cover;
+border-radius:20px;
+}
+
+button.add{
+background:linear-gradient(45deg,#4caf50,#2e7d32);
+color:white;
+border:none;
+padding:10px;
+border-radius:25px;
+cursor:pointer;
+width:100%;
+margin-top:8px;
+}
+
+/* CART */
+.cart-btn{
+position:fixed;
+bottom:20px;
+right:20px;
+background:black;
+color:white;
+padding:15px 20px;
+border-radius:40px;
+cursor:pointer;
+}
+
+.cart{
+display:none;
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:white;
+max-height:70%;
+overflow-y:auto;
+border-radius:25px 25px 0 0;
+padding:20px;
+}
+
+/* MODAL */
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+justify-content:center;
+align-items:center;
+}
+
+.modal-content{
+background:white;
+padding:20px;
+border-radius:20px;
+width:90%;
+max-width:400px;
+text-align:center;
+position:relative;
+}
+
+.close{
+position:absolute;
+right:15px;
+top:10px;
+cursor:pointer;
+font-size:20px;
+}
+
+/* FOOTER */
+footer{
+background:#111;
+color:white;
+padding:40px 20px;
+margin-top:40px;
+}
+
+.footer-container{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+}
+
+footer h4{
+margin-bottom:10px;
+}
+
+footer p{
+font-size:14px;
+line-height:1.6;
+}
+
+.footer-bottom{
+text-align:center;
+margin-top:20px;
+font-size:13px;
+color:#aaa;
+}
+</style>
+</head>
+
+<body>
+
+<audio id="cartSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+
+<div class="navbar">
+<div class="logo">Sky Store 🛍️</div>
+<button class="toggle-btn" onclick="toggleDark()">Dark Mode</button>
+</div>
+
+<div class="search-container">
+<input type="text" id="search" placeholder="Search products..." onkeyup="searchProducts()">
+</div>
+
+<section>
+<div class="product-grid">
+
+<div class="product" onclick="openModal('Dabur Hair Oil','₹120','Best herbal hair oil for strong & shiny hair.')">
+<img src="https://images.pexels.com/photos/6621336/pexels-photo-6621336.jpeg">
+<h4>Dabur Hair Oil</h4>
+<p>₹120</p>
+<button class="add" onclick="event.stopPropagation();addToCart('Dabur Hair Oil',120)">Add to Cart</button>
+</div>
+
+<div class="product" onclick="openModal('Head & Shoulders','₹180','Anti-dandruff shampoo for smooth scalp.')">
+<img src="https://images.pexels.com/photos/3736398/pexels-photo-3736398.jpeg">
+<h4>Head & Shoulders</h4>
+<p>₹180</p>
+<button class="add" onclick="event.stopPropagation();addToCart('Head & Shoulders',180)">Add to Cart</button>
+</div>
+
+</div>
+</section>
+
+<div class="cart-btn" onclick="toggleCart()">
+🛒 Cart (<span id="cart-count">0</span>)
+</div>
+
+<div id="cart" class="cart">
+<h3>Your Cart</h3>
+<div id="cart-items"></div>
+<h4>Total: ₹<span id="total">0</span></h4>
+<button class="add" onclick="checkout()">Order on WhatsApp</button>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div id="productModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeModal()">×</span>
+<h3 id="modalTitle"></h3>
+<p id="modalPrice"></p>
+<p id="modalDesc"></p>
+</div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+<div class="footer-container">
+<div>
+<h4>About Us</h4>
+<p>Sky Store provides quality daily-use products at best prices.</p>
+</div>
+<div>
+<h4>Customer Service</h4>
+<p>Help Center<br>Returns<br>Shipping Info</p>
+</div>
+<div>
+<h4>Contact</h4>
+<p>Email: support@skystore.com<br>Phone: +91 9996337667</p>
+</div>
+</div>
+<div class="footer-bottom">
+© 2025 Sky Store. All Rights Reserved.
+</div>
+</footer>
+
+<script>
+let cart=[];
+
+function addToCart(name,price){
+cart.push({name,price});
+updateCart();
+let sound=document.getElementById("cartSound");
+sound.currentTime=0;
+sound.play();
+}
+
+function updateCart(){
+let cartItems=document.getElementById("cart-items");
+let total=0;
+cartItems.innerHTML="";
+cart.forEach((item,index)=>{
+total+=item.price;
+cartItems.innerHTML+=`<p>${item.name} - ₹${item.price}
+<button onclick="removeItem(${index})">❌</button></p>`;
+});
+document.getElementById("total").innerText=total;
+document.getElementById("cart-count").innerText=cart.length;
+}
+
+function removeItem(index){
+cart.splice(index,1);
+updateCart();
+}
+
+function toggleCart(){
+let cartBox=document.getElementById("cart");
+cartBox.style.display=cartBox.style.display==="block"?"none":"block";
+}
+
+function checkout(){
+let message="I want to order:%0A";
+cart.forEach(item=>{
+message+=item.name+" - ₹"+item.price+"%0A";
+});
+window.open("https://wa.me/919996337667?text="+message);
+}
+
+function searchProducts(){
+let input=document.getElementById("search").value.toLowerCase();
+let products=document.getElementsByClassName("product");
+for(let i=0;i<products.length;i++){
+let title=products[i].getElementsByTagName("h4")[0].innerText.toLowerCase();
+products[i].style.display=title.includes(input)?"":"none";
+}
+}
+
+/* MODAL */
+function openModal(title,price,desc){
+document.getElementById("modalTitle").innerText=title;
+document.getElementById("modalPrice").innerText=price;
+document.getElementById("modalDesc").innerText=desc;
+document.getElementById("productModal").style.display="flex";
+}
+
+function closeModal(){
+document.getElementById("productModal").style.display="none";
+}
+
+function toggleDark(){
+document.body.classList.toggle("dark");
+}
+</script>
+
+</body>
+</html>
