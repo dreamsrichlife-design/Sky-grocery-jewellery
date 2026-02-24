@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky Store Pro</title>
+
+<style>
+body{margin:0;font-family:Segoe UI;background:#f5f6fa}
+
+/* GRID 4 PER ROW */
+.grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+padding:20px;
+}
+@media(max-width:900px){
+.grid{grid-template-columns:repeat(2,1fr);}
+}
+
+.card{
+background:#fff;
+padding:15px;
+border-radius:15px;
+box-shadow:0 5px 20px rgba(0,0,0,.1);
+text-align:center;
+}
+.card img{
+width:100%;
+height:250px;
+object-fit:cover;
+border-radius:12px;
+}
+button{
+background:#ff6a00;
+color:#fff;
+border:none;
+padding:8px 12px;
+border-radius:20px;
+cursor:pointer;
+margin-top:8px;
+}
+select{
+padding:6px;
+border-radius:10px;
+margin-top:6px;
+}
+
+/* CART */
+.cart-btn{
+position:fixed;
+bottom:20px;
+right:20px;
+background:#000;
+color:#fff;
+padding:15px;
+border-radius:40px;
+cursor:pointer;
+}
+.cart{
+position:fixed;
+bottom:-100%;
+left:0;
+width:100%;
+height:70%;
+background:#fff;
+padding:20px;
+transition:.4s;
+overflow:auto;
+}
+.cart.active{bottom:0}
+.qty-btn{
+background:#ddd;
+color:#000;
+padding:4px 8px;
+margin:0 5px;
+}
+.remove-btn{
+background:red;
+}
+</style>
+</head>
+<body>
+
+<h2 style="text-align:center">Sky Store</h2>
+
+<div class="grid" id="products"></div>
+
+<div class="cart-btn" onclick="openCart()">🛒 (<span id="count">0</span>)</div>
+
+<div class="cart" id="cart">
+<h3>Your Cart</h3>
+<div id="cartItems"></div>
+<h4>Total: ₹<span id="total">0</span></h4>
+<button onclick="orderWhatsApp()">Order on WhatsApp</button>
+</div>
+
+<script>
+
+let products=[];
+for(let i=0;i<20;i++){
+products.push({
+name:"Premium Hair Oil "+(i+1),
+price:150,
+img:"https://picsum.photos/600?random="+i
+});
+}
+
+let cart=[];
+let whatsapp="919996337667";
+
+/* RENDER PRODUCTS */
+function render(){
+let grid=document.getElementById("products");
+grid.innerHTML="";
+products.forEach((p,i)=>{
+grid.innerHTML+=`
+<div class="card">
+<img src="${p.img}">
+<h4>${p.name}</h4>
+<p>₹${p.price}</p>
+
+<select id="size${i}">
+<option value="100ml">100ml</option>
+<option value="200ml">200ml</option>
+<option value="500ml">500ml</option>
+</select>
+
+<button onclick="addToCart(${i})">Add to Cart</button>
+</div>`;
+});
+}
+render();
+
+/* ADD TO CART */
+function addToCart(i){
+let size=document.getElementById("size"+i).value;
+let item=cart.find(c=>c.name===products[i].name && c.size===size);
+
+if(item){
+item.qty++;
+}else{
+cart.push({
+name:products[i].name,
+price:products[i].price,
+size:size,
+qty:1
+});
+}
+updateCart();
+}
+
+/* UPDATE CART */
+function updateCart(){
+let html="";
+let total=0;
+
+cart.forEach((item,index)=>{
+total+=item.price*item.qty;
+
+html+=`
+<div>
+<b>${item.name}</b> (${item.size}) <br>
+<button class="qty-btn" onclick="changeQty(${index},-1)">−</button>
+${item.qty}
+<button class="qty-btn" onclick="changeQty(${index},1)">+</button>
+<button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+<hr>
+</div>
+`;
+});
+
+document.getElementById("cartItems").innerHTML=html;
+document.getElementById("total").innerText=total;
+document.getElementById("count").innerText=cart.length;
+}
+
+/* CHANGE QTY */
+function changeQty(index,val){
+cart[index].qty+=val;
+if(cart[index].qty<=0){
+cart.splice(index,1);
+}
+updateCart();
+}
+
+/* REMOVE */
+function removeItem(index){
+cart.splice(index,1);
+updateCart();
+}
+
+/* OPEN CART */
+function openCart(){
+document.getElementById("cart").classList.toggle("active");
+}
+
+/* WHATSAPP */
+function orderWhatsApp(){
+let msg="Order:%0A";
+cart.forEach(i=>{
+msg+=i.name+" ("+i.size+") x"+i.qty+"%0A";
+});
+window.open("https://wa.me/"+whatsapp+"?text="+msg);
+}
+
+</script>
+
+</body>
+</html>
