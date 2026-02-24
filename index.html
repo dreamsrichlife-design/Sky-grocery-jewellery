@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky Store Pro</title>
+
+<style>
+:root{
+--bg:#f5f6fa;
+--card:#fff;
+--text:#000;
+--accent:#ff6a00;
+}
+.dark{
+--bg:#111;
+--card:#1e1e1e;
+--text:#fff;
+}
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:var(--bg);
+color:var(--text);
+transition:.3s;
+}
+
+/* NAV */
+.nav{
+background:#000;
+color:#fff;
+padding:15px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
+position:relative;
+}
+.toggle{
+position:absolute;
+right:15px;
+top:15px;
+cursor:pointer;
+background:var(--accent);
+border:none;
+padding:5px 10px;
+border-radius:20px;
+color:#fff;
+}
+
+/* CATEGORY */
+.categories{
+display:flex;
+justify-content:center;
+gap:10px;
+padding:15px;
+flex-wrap:wrap;
+}
+.cat-btn{
+padding:8px 15px;
+border-radius:20px;
+border:none;
+background:#ddd;
+cursor:pointer;
+font-weight:600;
+}
+.cat-btn.active{
+background:var(--accent);
+color:#fff;
+}
+
+/* SEARCH */
+.search-box{text-align:center;padding:10px}
+.search-box input{
+width:90%;
+max-width:400px;
+padding:10px 15px;
+border-radius:25px;
+border:1px solid #ccc;
+}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+padding:20px;
+}
+@media(max-width:900px){
+.grid{grid-template-columns:repeat(2,1fr);}
+}
+
+.card{
+background:var(--card);
+padding:15px;
+border-radius:15px;
+box-shadow:0 5px 20px rgba(0,0,0,.1);
+text-align:center;
+cursor:pointer;
+position:relative;
+transition:.3s;
+}
+.card:hover{transform:translateY(-5px)}
+
+.card img{
+width:100%;
+height:250px;
+object-fit:cover;
+border-radius:12px;
+}
+
+.discount{
+position:absolute;
+top:10px;
+left:10px;
+background:red;
+color:#fff;
+padding:5px 8px;
+border-radius:10px;
+font-size:12px;
+}
+
+.rating{
+color:gold;
+font-size:14px;
+}
+
+button{
+background:var(--accent);
+color:#fff;
+border:none;
+padding:8px 12px;
+border-radius:20px;
+cursor:pointer;
+margin-top:8px;
+}
+
+/* POPUP */
+.popup{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.6);
+display:none;
+justify-content:center;
+align-items:center;
+}
+.popup-content{
+background:var(--card);
+width:90%;
+max-width:400px;
+padding:20px;
+border-radius:15px;
+text-align:center;
+color:var(--text);
+}
+.popup img{
+width:100%;
+height:250px;
+object-fit:cover;
+border-radius:10px;
+}
+.close-popup{
+background:red;
+margin-top:10px;
+}
+
+/* CART */
+.cart-btn{
+position:fixed;
+bottom:20px;
+right:20px;
+background:#000;
+color:#fff;
+padding:15px;
+border-radius:40px;
+cursor:pointer;
+}
+.cart{
+position:fixed;
+bottom:-100%;
+left:0;
+width:100%;
+height:75%;
+background:var(--card);
+padding:20px;
+transition:.4s;
+overflow:auto;
+}
+.cart.active{bottom:0}
+.qty-btn{
+background:#ddd;
+color:#000;
+padding:4px 8px;
+margin:0 5px;
+}
+.remove-btn{
+background:red;
+}
+</style>
+</head>
+<body>
+
+<div class="nav">
+Sky Store
+<button class="toggle" onclick="toggleDark()">🌙</button>
+</div>
+
+<div class="categories">
+<button class="cat-btn active" onclick="filterCategory('All',this)">All</button>
+<button class="cat-btn" onclick="filterCategory('Oil',this)">Oil</button>
+<button class="cat-btn" onclick="filterCategory('Shampoo',this)">Shampoo</button>
+<button class="cat-btn" onclick="filterCategory('Perfume',this)">Perfume</button>
+<button class="cat-btn" onclick="filterCategory('Soap',this)">Soap</button>
+</div>
+
+<div class="search-box">
+<input type="text" id="searchInput" placeholder="Search products...">
+</div>
+
+<div class="grid" id="products"></div>
+
+<div class="cart-btn" onclick="openCart()">🛒 (<span id="count">0</span>)</div>
+
+<div class="cart" id="cart">
+<h3>Your Cart</h3>
+<div id="cartItems"></div>
+<h4>Total: ₹<span id="total">0</span></h4>
+<button onclick="orderWhatsApp()">Order on WhatsApp</button>
+</div>
+
+<div class="popup" id="popup">
+<div class="popup-content">
+<img id="popupImg">
+<h3 id="popupName"></h3>
+<p id="popupDesc"></p>
+<div class="rating" id="popupRating"></div>
+<select id="popupSize" onchange="updatePopupPrice()">
+<option value="100">100ml</option>
+<option value="200">200ml</option>
+<option value="500">500ml</option>
+</select>
+<p>Price: ₹<span id="popupPrice"></span></p>
+<button onclick="addPopupToCart()">Add to Cart</button>
+<button onclick="orderSingle()">Order from WhatsApp</button>
+<button class="close-popup" onclick="closePopup()">Close</button>
+</div>
+</div>
+
+<script>
+
+let categories=["Oil","Shampoo","Perfume","Soap"];
+let products=[];
+for(let i=0;i<24;i++){
+products.push({
+name:categories[i%4]+" Product "+(i+1),
+basePrice:150+(i*10),
+category:categories[i%4],
+img:"https://picsum.photos/600?random="+i,
+rating:(4+Math.random()).toFixed(1),
+desc:"High quality "+categories[i%4]+" made for daily use. Best results guaranteed."
+});
+}
+
+let cart=[];
+let whatsapp="919996337667";
+let currentProduct=null;
+
+function render(list){
+let grid=document.getElementById("products");
+grid.innerHTML="";
+list.forEach((p,i)=>{
+let discount=Math.floor(Math.random()*30)+10;
+grid.innerHTML+=`
+<div class="card" onclick="openPopup(${i})">
+<div class="discount">${discount}% OFF</div>
+<img src="${p.img}">
+<h4>${p.name}</h4>
+<div class="rating">⭐ ${p.rating}</div>
+<p>From ₹${p.basePrice}</p>
+</div>`;
+});
+}
+render(products);
+
+function filterCategory(cat,btn){
+document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+if(cat==="All"){render(products);}
+else{render(products.filter(p=>p.category===cat));}
+}
+
+document.getElementById("searchInput").addEventListener("input",function(){
+let val=this.value.toLowerCase();
+render(products.filter(p=>p.name.toLowerCase().includes(val)));
+});
+
+function openPopup(i){
+currentProduct=products[i];
+document.getElementById("popupImg").src=currentProduct.img;
+document.getElementById("popupName").innerText=currentProduct.name;
+document.getElementById("popupDesc").innerText=currentProduct.desc;
+document.getElementById("popupRating").innerText="⭐ "+currentProduct.rating+" / 5";
+document.getElementById("popupSize").value="100";
+updatePopupPrice();
+document.getElementById("popup").style.display="flex";
+}
+function closePopup(){document.getElementById("popup").style.display="none";}
+
+function calculatePrice(size){
+let base=currentProduct.basePrice;
+if(size==200) return Math.floor(base*1.4);
+if(size==500) return Math.floor(base*1.9);
+return base;
+}
+function updatePopupPrice(){
+let size=document.getElementById("popupSize").value;
+document.getElementById("popupPrice").innerText=calculatePrice(size);
+}
+
+function addPopupToCart(){
+let size=document.getElementById("popupSize").value;
+let price=calculatePrice(size);
+let item=cart.find(c=>c.name===currentProduct.name && c.size===size);
+if(item){item.qty++;}
+else{cart.push({name:currentProduct.name,size:size+"ml",price:price,qty:1});}
+updateCart();
+closePopup();
+}
+
+function updateCart(){
+let html="";
+let total=0;
+cart.forEach((item,index)=>{
+total+=item.price*item.qty;
+html+=`
+<div>
+<b>${item.name}</b> (${item.size}) <br>
+<button class="qty-btn" onclick="changeQty(${index},-1)">−</button>
+${item.qty}
+<button class="qty-btn" onclick="changeQty(${index},1)">+</button>
+<button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+<hr>
+</div>`;
+});
+document.getElementById("cartItems").innerHTML=html;
+document.getElementById("total").innerText=total;
+document.getElementById("count").innerText=cart.length;
+}
+
+function changeQty(i,val){
+cart[i].qty+=val;
+if(cart[i].qty<=0){cart.splice(i,1);}
+updateCart();
+}
+function removeItem(i){cart.splice(i,1);updateCart();}
+function openCart(){document.getElementById("cart").classList.toggle("active");}
+
+function orderWhatsApp(){
+let msg="Order:%0A";
+cart.forEach(i=>{msg+=i.name+" ("+i.size+") x"+i.qty+"%0A";});
+window.open("https://wa.me/"+whatsapp+"?text="+msg);
+}
+function orderSingle(){
+let size=document.getElementById("popupSize").value;
+let price=calculatePrice(size);
+let msg=currentProduct.name+" ("+size+"ml) - ₹"+price;
+window.open("https://wa.me/"+whatsapp+"?text="+encodeURIComponent(msg));
+}
+
+function toggleDark(){
+document.body.classList.toggle("dark");
+}
+
+</script>
+
+</body>
+  </html>
