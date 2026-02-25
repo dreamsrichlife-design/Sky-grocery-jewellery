@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky Store</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff6a00">
+
+<style>
+:root{
+--bg:#f5f6fa;
+--card:#fff;
+--text:#000;
+--accent:#ff6a00;
+}
+.dark{
+--bg:#111;
+--card:#1e1e1e;
+--text:#fff;
+}
+body{
+margin:0;
+font-family:Segoe UI;
+background:var(--bg);
+color:var(--text);
+transition:.3s;
+}
+
+/* NAV */
+.nav{
+background:#000;
+color:#fff;
+padding:15px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
+position:relative;
+}
+.toggle{
+position:absolute;
+right:15px;
+top:15px;
+background:var(--accent);
+border:none;
+padding:6px 14px;
+border-radius:20px;
+color:#fff;
+cursor:pointer;
+}
+
+/* CATEGORY */
+.categories{
+display:flex;
+justify-content:center;
+gap:10px;
+padding:15px;
+flex-wrap:wrap;
+}
+.cat-btn{
+padding:8px 15px;
+border-radius:20px;
+border:none;
+background:#ddd;
+cursor:pointer;
+font-weight:600;
+}
+.cat-btn.active{
+background:var(--accent);
+color:#fff;
+}
+
+/* SEARCH */
+.search-box{
+text-align:center;
+padding:10px;
+}
+.search-box input{
+width:90%;
+max-width:400px;
+padding:10px 15px;
+border-radius:25px;
+border:1px solid #ccc;
+}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+padding:20px;
+}
+@media(max-width:900px){
+.grid{grid-template-columns:repeat(2,1fr);}
+}
+
+.card{
+background:var(--card);
+padding:15px;
+border-radius:15px;
+box-shadow:0 5px 20px rgba(0,0,0,.1);
+text-align:center;
+cursor:pointer;
+position:relative;
+transition:.3s;
+}
+.card:hover{transform:translateY(-5px)}
+.card img{
+width:100%;
+height:220px;
+object-fit:cover;
+border-radius:12px;
+}
+.discount{
+position:absolute;
+top:10px;
+left:10px;
+background:red;
+color:#fff;
+padding:5px 8px;
+border-radius:10px;
+font-size:12px;
+}
+.rating{
+color:gold;
+font-size:14px;
+}
+
+/* SIZE BUTTON */
+.size-options{
+display:flex;
+justify-content:center;
+gap:10px;
+margin:10px 0;
+}
+.size-btn{
+padding:6px 14px;
+border-radius:25px;
+border:2px solid var(--accent);
+background:transparent;
+color:var(--text);
+cursor:pointer;
+font-weight:600;
+transition:.3s;
+}
+.size-btn.active{
+background:var(--accent);
+color:#fff;
+}
+
+/* POPUP */
+.popup{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.6);
+display:none;
+justify-content:center;
+align-items:center;
+}
+.popup-content{
+background:var(--card);
+width:90%;
+max-width:400px;
+padding:20px;
+border-radius:15px;
+text-align:center;
+}
+
+/* CART */
+.cart-btn{
+position:fixed;
+bottom:20px;
+right:20px;
+background:#000;
+color:#fff;
+padding:15px;
+border-radius:40px;
+cursor:pointer;
+}
+.cart{
+position:fixed;
+bottom:-100%;
+left:0;
+width:100%;
+height:75%;
+background:var(--card);
+padding:20px;
+transition:.4s;
+overflow:auto;
+}
+.cart.active{bottom:0}
+.cart-header{
+display:flex;
+align-items:center;
+gap:15px;
+}
+.close-cart{
+background:red;
+padding:5px 10px;
+border-radius:10px;
+cursor:pointer;
+}
+.qty-btn{
+background:#ddd;
+padding:4px 8px;
+margin:0 5px;
+}
+.remove-btn{background:red;}
+button{
+background:var(--accent);
+color:#fff;
+border:none;
+padding:8px 14px;
+border-radius:20px;
+cursor:pointer;
+margin-top:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="nav">
+Sky Store
+<button class="toggle" onclick="toggleDark()">🌙</button>
+</div>
+
+<div class="categories">
+<button class="cat-btn active" onclick="filterCategory('All',this)">All</button>
+<button class="cat-btn" onclick="filterCategory('Oil',this)">Oil</button>
+<button class="cat-btn" onclick="filterCategory('Shampoo',this)">Shampoo</button>
+<button class="cat-btn" onclick="filterCategory('Perfume',this)">Perfume</button>
+<button class="cat-btn" onclick="filterCategory('Soap',this)">Soap</button>
+</div>
+
+<div class="search-box">
+<input type="text" id="searchInput" placeholder="Search products...">
+</div>
+
+<div class="grid" id="products"></div>
+
+<div class="cart-btn" onclick="openCart()">🛒 (<span id="count">0</span>)</div>
+
+<div class="cart" id="cart">
+<div class="cart-header">
+<button class="close-cart" onclick="openCart()">❌</button>
+<h3>Your Cart</h3>
+</div>
+<div id="cartItems"></div>
+<h4>Total: ₹<span id="total">0</span></h4>
+<button onclick="orderWhatsApp()">Order on WhatsApp</button>
+</div>
+
+<div class="popup" id="popup">
+<div class="popup-content">
+<img id="popupImg" style="width:100%;height:200px;object-fit:cover;border-radius:10px;">
+<h3 id="popupName"></h3>
+<p id="popupDesc"></p>
+<div class="rating" id="popupRating"></div>
+
+<div class="size-options">
+<button class="size-btn active" onclick="selectSize(100,this)">100ml</button>
+<button class="size-btn" onclick="selectSize(200,this)">200ml</button>
+<button class="size-btn" onclick="selectSize(500,this)">500ml</button>
+</div>
+
+<p>Price: ₹<span id="popupPrice"></span></p>
+<button onclick="addPopupToCart()">Add to Cart</button>
+<button onclick="orderSingle()">Order from WhatsApp</button>
+<button onclick="closePopup()" style="background:red;">Close</button>
+</div>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+let categories=["Oil","Shampoo","Perfume","Soap"];
+let products=[];
+for(let i=0;i<24;i++){
+products.push({
+name:categories[i%4]+" Product "+(i+1),
+basePrice:150+(i*20),
+category:categories[i%4],
+img:"https://picsum.photos/600?random="+i,
+rating:(4+Math.random()).toFixed(1),
+desc:"Premium quality "+categories[i%4]+" for daily use."
+});
+}
+
+let cart=[];
+let whatsapp="919996337667";
+let currentProduct=null;
+let selectedSize=100;
+
+function render(list){
+let grid=document.getElementById("products");
+grid.innerHTML="";
+list.forEach((p,i)=>{
+grid.innerHTML+=`
+<div class="card" onclick="openPopup(${i})">
+<div class="discount">${Math.floor(Math.random()*20)+10}% OFF</div>
+<img src="${p.img}">
+<h4>${p.name}</h4>
+<div class="rating">⭐ ${p.rating}</div>
+<p>From ₹${p.basePrice}</p>
+</div>`;
+});
+}
+render(products);
+
+function filterCategory(cat,btn){
+document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+if(cat==="All"){render(products);}
+else{render(products.filter(p=>p.category===cat));}
+}
+
+document.getElementById("searchInput").addEventListener("input",function(){
+let val=this.value.toLowerCase();
+render(products.filter(p=>p.name.toLowerCase().includes(val)));
+});
+
+function openPopup(i){
+currentProduct=products[i];
+selectedSize=100;
+document.querySelectorAll(".size-btn").forEach(b=>b.classList.remove("active"));
+document.querySelector(".size-btn").classList.add("active");
+document.getElementById("popupImg").src=currentProduct.img;
+document.getElementById("popupName").innerText=currentProduct.name;
+document.getElementById("popupDesc").innerText=currentProduct.desc;
+document.getElementById("popupRating").innerText="⭐ "+currentProduct.rating+" / 5";
+updatePopupPrice();
+document.getElementById("popup").style.display="flex";
+}
+
+function closePopup(){document.getElementById("popup").style.display="none";}
+
+function selectSize(size,btn){
+selectedSize=size;
+document.querySelectorAll(".size-btn").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+updatePopupPrice();
+}
+
+function calculatePrice(){
+let base=currentProduct.basePrice;
+if(selectedSize==200) return Math.floor(base*1.4);
+if(selectedSize==500) return Math.floor(base*1.9);
+return base;
+}
+function updatePopupPrice(){
+document.getElementById("popupPrice").innerText=calculatePrice();
+}
+
+function addPopupToCart(){
+let price=calculatePrice();
+let item=cart.find(c=>c.name===currentProduct.name && c.size===selectedSize);
+if(item){item.qty++;}
+else{cart.push({name:currentProduct.name,size:selectedSize+"ml",price:price,qty:1});}
+updateCart();
+closePopup();
+}
+
+function updateCart(){
+let html="";
+let total=0;
+cart.forEach((item,index)=>{
+total+=item.price*item.qty;
+html+=`
+<div>
+<b>${item.name}</b> (${item.size})<br>
+<button class="qty-btn" onclick="changeQty(${index},-1)">−</button>
+${item.qty}
+<button class="qty-btn" onclick="changeQty(${index},1)">+</button>
+<button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+<hr>
+</div>`;
+});
+document.getElementById("cartItems").innerHTML=html;
+document.getElementById("total").innerText=total;
+document.getElementById("count").innerText=cart.length;
+}
+
+function changeQty(i,val){
+cart[i].qty+=val;
+if(cart[i].qty<=0){cart.splice(i,1);}
+updateCart();
+}
+function removeItem(i){cart.splice(i,1);updateCart();}
+function openCart(){document.getElementById("cart").classList.toggle("active");}
+
+function orderWhatsApp(){
+let msg="Order:%0A";
+cart.forEach(i=>{msg+=i.name+" ("+i.size+") x"+i.qty+"%0A";});
+window.open("https://wa.me/"+whatsapp+"?text="+msg);
+}
+
+function orderSingle(){
+let price=calculatePrice();
+let msg=currentProduct.name+" ("+selectedSize+"ml) - ₹"+price;
+window.open("https://wa.me/"+whatsapp+"?text="+encodeURIComponent(msg));
+}
+
+function toggleDark(){
+document.body.classList.toggle("dark");
+}
+</script>
+
+</body>
+  </html>
